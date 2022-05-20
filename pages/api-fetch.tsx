@@ -3,11 +3,13 @@ import { useSession } from "next-auth/react";
 import Layout from "../components/layout";
 
 const apiUrl =
-  process.env.OPENCOLLECTIVE_API_URL || "https://api.opencollective.com";
+  process.env.NEXT_PUBLIC_OPENCOLLECTIVE_API_URL ||
+  process.env.OPENCOLLECTIVE_API_URL ||
+  "https://api.opencollective.com";
 
 const meQuery = `{me {id name email imageUrl }}`;
 
-export default function ApiExamplePage() {
+export default function ApiFetchPage() {
   const { data: sessionData } = useSession();
 
   const [me, setMe] = useState(null);
@@ -44,7 +46,7 @@ export default function ApiExamplePage() {
 
       <h2>Query</h2>
 
-      <pre>{meQuery.toString()}</pre>
+      <pre>{meQuery}</pre>
 
       <h2>Result</h2>
 

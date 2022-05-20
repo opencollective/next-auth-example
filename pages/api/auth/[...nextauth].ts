@@ -1,65 +1,68 @@
-import NextAuth, { NextAuthOptions } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
-import FacebookProvider from "next-auth/providers/facebook"
-import GithubProvider from "next-auth/providers/github"
-import TwitterProvider from "next-auth/providers/twitter"
-import Auth0Provider from "next-auth/providers/auth0"
-// import AppleProvider from "next-auth/providers/apple"
-// import EmailProvider from "next-auth/providers/email"
+import NextAuth from "next-auth";
+import type { OAuthConfig, OAuthUserConfig } from "next-auth/providers";
 
-// For more information on each option (and a full list of options) go to
-// https://next-auth.js.org/configuration/options
-export const authOptions: NextAuthOptions = {
-  // https://next-auth.js.org/configuration/providers/oauth
-  providers: [
-    /* EmailProvider({
-         server: process.env.EMAIL_SERVER,
-         from: process.env.EMAIL_FROM,
-       }),
-    // Temporarily removing the Apple provider from the demo site as the
-    // callback URL for it needs updating due to Vercel changing domains
+export interface OpenCollectiveProfile extends Record<string, any> {
+  id: string;
+  name: string;
+  email: string;
+  imageUrl: string;
+}
 
-    Providers.Apple({
-      clientId: process.env.APPLE_ID,
-      clientSecret: {
-        appleId: process.env.APPLE_ID,
-        teamId: process.env.APPLE_TEAM_ID,
-        privateKey: process.env.APPLE_PRIVATE_KEY,
-        keyId: process.env.APPLE_KEY_ID,
+const apiUrl =
+  process.env.OPENCOLLECTIVE_API_URL || "https://api.opencollective.com";
+const websiteUrl =
+  process.env.OPENCOLLECTIVE_WEBSITE_URL || "https://opencollective.com";
+
+function OpenCollective<P extends OpenCollectiveProfile>(
+  options: OAuthUserConfig<P>
+): OAuthConfig<P> {
+  return {
+    id: "opencollective",
+    name: "Open Collective",
+    type: "oauth",
+    authorization: `${websiteUrl}/oauth/authorize?scope=email`,
+    token: `${apiUrl}/oauth/token`,
+    userinfo: {
+      url: `${apiUrl}/graphql`,
+      params: {
+        query: "{me{id name email imageUrl}}",
       },
-    }),
-    */
-    FacebookProvider({
-      clientId: process.env.FACEBOOK_ID,
-      clientSecret: process.env.FACEBOOK_SECRET,
-    }),
-    GithubProvider({
-      clientId: process.env.GITHUB_ID,
-      clientSecret: process.env.GITHUB_SECRET,
-    }),
-    GoogleProvider({
-      clientId: process.env.GOOGLE_ID,
-      clientSecret: process.env.GOOGLE_SECRET,
-    }),
-    TwitterProvider({
-      clientId: process.env.TWITTER_ID,
-      clientSecret: process.env.TWITTER_SECRET,
-    }),
-    Auth0Provider({
-      clientId: process.env.AUTH0_ID,
-      clientSecret: process.env.AUTH0_SECRET,
-      issuer: process.env.AUTH0_ISSUER,
+    },
+    profile({ data: { me: profile } }) {
+      return {
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        image: profile.imageUrl,
+      };
+    },
+    options,
+  };
+}
+
+export default NextAuth({
+  providers: [
+    OpenCollective({
+      clientId: process.env.OPENCOLLECTIVE_ID,
+      clientSecret: process.env.OPENCOLLECTIVE_SECRET,
     }),
   ],
   theme: {
     colorScheme: "light",
   },
   callbacks: {
-    async jwt({ token }) {
-      token.userRole = "admin"
-      return token
+    async jwt({ token, user, account, profile, isNewUser }) {
+      // Persist the OAuth access_token to the token right after signin
+      if (account) {
+        token.accessToken = account.access_token;
+      }
+      return token;
+    },
+
+    async session({ session, token, user }) {
+      // Send properties to the client, like an access_token from a provider.
+      session.accessToken = token.accessToken;
+      return session;
     },
   },
-}
-
-export default NextAuth(authOptions)
+});
