@@ -72,6 +72,22 @@ export default function Header() {
             </Link>
           </li>
           <li className={styles.navItem}>
+            <Link href="/api-fetch">
+              <a>API Fetch</a>
+            </Link>
+          </li>
+          <li className={styles.navItem}>
+            <Link href="/apollo-server-side">
+              <a>Apollo SSR</a>
+            </Link>
+          </li>
+          <li className={styles.navItem}>
+            <Link href="/apollo-client-side">
+              <a>Apollo Client</a>
+            </Link>
+          </li>
+          {/*
+          <li className={styles.navItem}>
             <Link href="/client">
               <a>Client</a>
             </Link>
@@ -101,8 +117,9 @@ export default function Header() {
               <a>Me</a>
             </Link>
           </li>
+          */}
         </ul>
       </nav>
     </header>
-  )
+  );
 }
